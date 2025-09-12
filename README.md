@@ -30,10 +30,15 @@ There are several build options, which can be set by adding the flag `-D<option>
 - `MODAL_BUILD_DOCS=<on|off>` to build docs using Doxygen, adds target ModalSynthDocs, defaults to `on` (will be skipped if Doxygen is not installed)
 - `MODAL_BUILD_TESTS=<on|off>` to build tests using Catch2, adds target ModalSynthTests, defaults to `on`
 
-To build `ModalSynth` using the CMake CLI:
+To build `ModalSynth` using the CMake CLI on MacOS or Linux:
 ```shell
 $ cmake -DCMAKE_BUILD_TYPE=Release -S . -B build
 $ cmake --build build --target ModalSynthPlug_All -j8
+```
+To build on Windows:
+```shell
+$ cmake -S . -B build
+$ cmake --build build --config Release --target ModalSynthPlug_All -j8
 ```
 This will put the built plugins in subdirectories of `<repo-path>/build/ModalSynthPlug_artefacts`.
 
