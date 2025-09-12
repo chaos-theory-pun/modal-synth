@@ -1,0 +1,11 @@
+[submodule "JUCE"]
+	path = libs/JUCE
+	url = https://github.com/juce-framework/JUCE.git
+	branch = juce8
+[submodule "libs/melatonin_inspector"]
+	path = libs/melatonin_inspector
+	url = https://github.com/sudara/melatonin_inspector.git
+	branch = main
+[submodule "libs/catch2"]
+	path = libs/catch2
+	url = https://github.com/catchorg/Catch2.git

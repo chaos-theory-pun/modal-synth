@@ -1,0 +1,61 @@
+function(add_synth target_name plugin_code plugin_name extra_sources)
+    juce_add_plugin(${target_name}
+            #    VERSION ...                               # Set this if the plugin version is different to the project version
+            #    ICON_BIG ...                              # ICON_* arguments specify a path to an image file to use as an icon
+            #    ICON_SMALL ...
+            COMPANY_NAME Crispin                 # Specify the name of the plugin's author
+            IS_SYNTH TRUE                        # Is this a synth or an effect?
+            NEEDS_MIDI_INPUT TRUE                # Does the plugin need midi input?
+            NEEDS_MIDI_OUTPUT FALSE              # Does the plugin need midi output?
+            IS_MIDI_EFFECT FALSE                 # Is this plugin a MIDI effect?
+            EDITOR_WANTS_KEYBOARD_FOCUS FALSE    # Does the editor need keyboard focus?
+            PLUGIN_MANUFACTURER_CODE Chit        # A four-character manufacturer id with at least one upper-case character
+            PLUGIN_CODE ${plugin_code}                     # A unique four-character plugin id with exactly one upper-case character
+            # GarageBand 10.3 requires the first letter to be upper-case, and the remaining
+            # letters to be lower-case
+            FORMATS AU VST3 Standalone           # The formats to build. Other valid formats are: AAX Unity VST AU AUv3
+            PRODUCT_NAME ${plugin_name}     # The name of the final executable, which can differ from the target name
+    )
+
+    target_compile_definitions(${target_name} PRIVATE MODAL_NUM_TYPE=${MODAL_NUM_TYPE})
+
+    if (MODAL_DEBUG_UI)
+        target_compile_definitions(${target_name} PRIVATE MODAL_DEBUG_UI)
+    endif ()
+
+    target_sources(${target_name}
+            PRIVATE
+            ${${extra_sources}}
+            ${common_sources}
+    )
+
+    TARGET_INCLUDE_DIRECTORIES(${target_name}
+            PUBLIC
+            include
+    )
+
+    target_compile_definitions(${target_name}
+            PUBLIC
+            # JUCE_WEB_BROWSER and JUCE_USE_CURL would be on by default, but you might not need them.
+            JUCE_WEB_BROWSER=0  # If you remove this, add `NEEDS_WEB_BROWSER TRUE` to the `juce_add_plugin` call
+            JUCE_USE_CURL=0     # If you remove this, add `NEEDS_CURL TRUE` to the `juce_add_plugin` call
+            JUCE_VST3_CAN_REPLACE_VST2=0
+    )
+
+    target_link_libraries(${target_name}
+            PRIVATE
+            # AudioPluginData           # If we'd created a binary data target, we'd link to it here
+            juce::juce_audio_utils
+            melatonin_inspector
+            randutils
+            PUBLIC
+            juce::juce_recommended_config_flags
+            juce::juce_recommended_lto_flags
+            juce::juce_recommended_warning_flags
+    )
+
+    if (MODAL_INSTALL_PLUGIN)
+        message("-- Will install plugins on build")
+        juce_enable_copy_plugin_step(${target_name})
+    endif ()
+endfunction()

@@ -1,0 +1,258 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+#include <ModalSynth/PluginProcessor.hpp>
+#include <ModalSynth/PluginEditor.hpp>
+
+namespace modal::plugin {
+//==============================================================================
+    Processor::Processor()
+            : AudioProcessor(BusesProperties()
+#if !JucePlugin_IsMidiEffect
+#if !JucePlugin_IsSynth
+                                     .withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
+#endif
+                                     .withOutput("Output", juce::AudioChannelSet::stereo(), true)
+#endif
+    ), params{*this, nullptr, juce::Identifier("ModalSynth"), {
+            std::make_unique<juce::AudioParameterFloat>("slider1", "2ths mode amplitude", 0, 1, 1),
+            std::make_unique<juce::AudioParameterFloat>("slider2", "3ths mode amplitude", 0, 1, 1),
+            std::make_unique<juce::AudioParameterFloat>("dial1", "2ths mode position", 0, 1, 1),
+            std::make_unique<juce::AudioParameterFloat>("dial2", "3ths mode position", 0, 1, 1),
+            std::make_unique<juce::AudioParameterChoice>("foldback_mode", "Foldback Mode",
+                                                         juce::StringArray{"Normal", "Undertones", "Foldback"}, 0),
+            std::make_unique<juce::AudioParameterFloat>("foldback_point", "Foldback Point", 20, 20000, 1600),
+            std::make_unique<juce::AudioParameterChoice>("exciter", "Exciter",
+                                                         juce::StringArray{"Pick", "Blow", "Impulses", "Square",
+                                                                           "Chirp"}, 0),
+            std::make_unique<juce::AudioParameterFloat>("exciter_rate", "Exciter Rate Divider", 1, 100, 4),
+            std::make_unique<juce::AudioParameterFloat>("attack", "Attack", 0, 5, 0.5),
+            std::make_unique<juce::AudioParameterFloat>("release", "Release", 0, 5, 0.5),
+            std::make_unique<juce::AudioParameterInt>("modes", "Mode Count", 1, 40, 40),
+            std::make_unique<juce::AudioParameterFloat>("detune", "Mode Detune Linear", -0.06, 2, 0),
+            std::make_unique<juce::AudioParameterFloat>("exponent", "Mode Detune Exponent", 0.1, 10, 1),
+            std::make_unique<juce::AudioParameterFloat>("falloff", "Falloff Exponent", 0, 3, 1),
+            std::make_unique<juce::AudioParameterFloat>("decay", "Decay", 0.1, 5, 1),
+            std::make_unique<juce::AudioParameterFloat>("formant_x", "Formant X", 0, 1, 0.5),
+            std::make_unique<juce::AudioParameterFloat>("formant_y", "Formant Y", 0, 1, 0.5),
+            std::make_unique<juce::AudioParameterFloat>("formant_len", "Formant throat length", 0, 1, 0.5),
+            std::make_unique<juce::AudioParameterFloat>("formant_mix", "Formant drywet mix", 0, 1, 0.5),
+    }}, controller{modal_synths} {
+        params.state.addListener(this);
+    }
+
+    Processor::~Processor() = default;
+
+//==============================================================================
+    const juce::String Processor::getName() const {
+        return JucePlugin_Name;
+    }
+
+    bool Processor::acceptsMidi() const {
+#if JucePlugin_WantsMidiInput
+        return true;
+#else
+        return false;
+#endif
+    }
+
+    bool Processor::producesMidi() const {
+#if JucePlugin_ProducesMidiOutput
+        return true;
+#else
+        return false;
+#endif
+    }
+
+    bool Processor::isMidiEffect() const {
+#if JucePlugin_IsMidiEffect
+        return true;
+#else
+        return false;
+#endif
+    }
+
+    double Processor::getTailLengthSeconds() const {
+        return 0.0;
+    }
+
+    int Processor::getNumPrograms() {
+        return 1;   // NB: some hosts don't cope very well if you tell them there are 0 programs,
+        // so this should be at least 1, even if you're not really implementing programs.
+    }
+
+    int Processor::getCurrentProgram() {
+        return 0;
+    }
+
+    void Processor::setCurrentProgram(int index) {
+        juce::ignoreUnused(index);
+    }
+
+    const juce::String Processor::getProgramName(int index) {
+        juce::ignoreUnused(index);
+        return {};
+    }
+
+    void Processor::changeProgramName(int index, const juce::String& newName) {
+        juce::ignoreUnused(index, newName);
+    }
+
+//==============================================================================
+    void Processor::prepareToPlay(double sampleRate, int samplesPerBlock) {
+        for (auto& m: modal_synths) {
+            m.set_sample_rate(static_cast<dsp::num>(sampleRate));
+        }
+        juce::ignoreUnused(samplesPerBlock);
+    }
+
+    void Processor::releaseResources() {
+        // When playback stops, you can use this as an opportunity to free up any
+        // spare memory, etc.
+    }
+
+    bool Processor::isBusesLayoutSupported(const BusesLayout& layouts) const {
+#if JucePlugin_IsMidiEffect
+        juce::ignoreUnused (layouts);
+        return true;
+#else
+        // This is the place where you check if the layout is supported.
+        // In this template code we only support mono or stereo.
+        // Some plugin hosts, such as certain GarageBand versions, will only
+        // load plugins that support stereo bus layouts.
+        if (layouts.getMainOutputChannelSet() != juce::AudioChannelSet::mono()
+            && layouts.getMainOutputChannelSet() != juce::AudioChannelSet::stereo())
+            return false;
+
+        // This checks if the input layout matches the output layout
+#if !JucePlugin_IsSynth
+        if (layouts.getMainOutputChannelSet() != layouts.getMainInputChannelSet())
+            return false;
+#endif
+
+        return true;
+#endif
+    }
+
+    void Processor::processBlock(juce::AudioBuffer<float>& buffer,
+                                                 juce::MidiBuffer& midiMessages) {
+
+        keyboard_state.processNextMidiBuffer(midiMessages, 0, buffer.getNumSamples(), true);
+
+        for (const auto& metadata: midiMessages) {
+            auto m = metadata.getMessage();
+            if (m.isNoteOn()) {
+                params_changed = true;
+                controller.key_down(m.getNoteNumber(), m.getFloatVelocity());
+            } else if (m.isNoteOff()) {
+                controller.key_up(m.getNoteNumber());
+            }
+        }
+
+        if (params_changed) {
+            params_changed = false;
+            auto exciter_mode = static_cast<dsp::synth::ModalExiterKind>(dynamic_cast<juce::AudioParameterChoice*>(params.getParameter(
+                    "exciter"))->
+                    getIndex());
+            auto foldback_mode = static_cast<dsp::synth::ModalFoldbackKind>(
+                    dynamic_cast<juce::AudioParameterChoice*>(params.getParameter("foldback_mode"))->getIndex());
+
+            for (auto& m: modal_synths) {
+                m.set_env_params(
+                        *params.getRawParameterValue("attack"),
+                        *params.getRawParameterValue("release")
+                );
+                bool changed = m.set_params(
+                        (size_t) *params.getRawParameterValue("modes"),
+                        *params.getRawParameterValue("detune"),
+                        *params.getRawParameterValue("exponent"),
+                        *params.getRawParameterValue("exciter_rate"),
+                        *params.getRawParameterValue("decay"),
+                        *params.getRawParameterValue("falloff")
+                );
+                changed |= m.set_mode_freqs({
+                                                    params.getRawParameterValue("dial1")->load(),
+                                                    params.getRawParameterValue("dial2")->load()
+                });
+                changed |= m.set_mode_gains({
+                                                    params.getRawParameterValue("slider1")->load(),
+                                                    params.getRawParameterValue("slider2")->load()
+                });
+                m.set_exciter(exciter_mode);
+                changed |= m.set_foldback_settings(foldback_mode,
+                                                   params.getRawParameterValue("foldback_point")->load());
+                m.set_formant_params(
+                        params.getRawParameterValue("formant_x")->load(),
+                        params.getRawParameterValue("formant_y")->load(),
+                        params.getRawParameterValue("formant_len")->load(),
+                        params.getRawParameterValue("formant_mix")->load()
+                );
+
+                if (changed) {
+                    m.update_mode_coefficients();
+                }
+            }
+
+        }
+
+        juce::ScopedNoDenormals noDenormals;
+        auto totalNumInputChannels = getTotalNumInputChannels();
+        auto totalNumOutputChannels = getTotalNumOutputChannels();
+
+        for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i) {
+            buffer.clear(i, 0, buffer.getNumSamples());
+        }
+
+        for (int i = 0; i < buffer.getNumSamples(); i++) {
+            dsp::num out = 0;
+            for (auto& m: modal_synths) {
+                out += m.tick();
+            }
+            using namespace dsp; // for _nm literal
+            out *= 0.1_nm;
+
+            for (int channel = 0; channel < totalNumOutputChannels; ++channel) {
+                buffer.setSample(channel, i, out);
+            }
+        }
+
+    }
+
+//==============================================================================
+    bool Processor::hasEditor() const {
+        return true; // (change this to false if you choose to not supply an editor)
+    }
+
+    juce::AudioProcessorEditor* Processor::createEditor() {
+        return new Editor(*this, params);
+    }
+
+//==============================================================================
+    void Processor::getStateInformation(juce::MemoryBlock& destData) {
+        const auto state = params.copyState();
+        const std::unique_ptr<juce::XmlElement> xml(state.createXml());
+        copyXmlToBinary(*xml, destData);
+    }
+
+    void Processor::setStateInformation(const void* data, const int sizeInBytes) {
+        const std::unique_ptr<juce::XmlElement> xmlState(getXmlFromBinary(data, sizeInBytes));
+
+        if (xmlState != nullptr) {
+            if (xmlState->hasTagName(params.state.getType())) {
+                params.replaceState(juce::ValueTree::fromXml(*xmlState));
+            }
+        }
+    }
+
+    void Processor::valueTreePropertyChanged(juce::ValueTree& treeWhosePropertyHasChanged,
+                                                             const juce::Identifier& property) {
+        juce::ignoreUnused(treeWhosePropertyHasChanged, property);
+        params_changed = true;
+    }
+
+}
+
+//==============================================================================
+// This creates new instances of the plugin.
+juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter() {
+    return new modal::plugin::Processor();
+}
