@@ -13,13 +13,13 @@ namespace modal::dsp {
 
     /** @brief Literal type for integer literals to dsp::num
      */
-    constexpr num operator ""_nm(unsigned long long n) {
+    constexpr num operator ""_nm(const unsigned long long n) {
         return static_cast<num>(n);
     }
 
     /** @brief Literal type for floating literals to dsp::num
     */
-    constexpr num operator ""_nm(long double d) {
+    constexpr num operator ""_nm(const long double d) {
         return static_cast<num>(d);
     }
 }

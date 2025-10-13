@@ -2,7 +2,7 @@
 
 cmake_minimum_required(VERSION 3.22)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23) # todo: for std::println, consider changing back to 20
 
 # build universal plugin
 set(CMAKE_OSX_ARCHITECTURES arm64 x86_64)
