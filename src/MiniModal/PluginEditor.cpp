@@ -21,10 +21,10 @@ namespace modal::plugin {
         setLookAndFeel(&laf);
 
         controls.setup(params);
-        sliders.setup(params);
+        spectrum_controls.setup(params);
         exciter_controls.setup(params);
         addAndMakeVisible(controls);
-        addAndMakeVisible(sliders);
+        addAndMakeVisible(spectrum_controls);
         addAndMakeVisible(exciter_controls);
 
         if (JUCEApplicationBase::isStandaloneApp()) {
@@ -59,7 +59,7 @@ namespace modal::plugin {
 
         grid.items = {
                 Item{controls}.withColumn({1, 4}),
-                Item{exciter_controls}, Item{sliders}
+                Item{exciter_controls}, Item{spectrum_controls}
         };
 
         if (JUCEApplicationBase::isStandaloneApp()) {
@@ -79,17 +79,11 @@ namespace modal::plugin {
         foldback_mode.setup(plug_params, "foldback_mode");
         foldback_point.setup(plug_params, "foldback_point");
         num_modes.setup(plug_params, "modes");
-        detune.setup(plug_params, "detune");
-        exponent.setup(plug_params, "exponent");
-        falloff.setup(plug_params, "falloff");
         decay.setup(plug_params, "decay");
 
         addAndMakeVisible(foldback_mode);
         addAndMakeVisible(foldback_point);
         addAndMakeVisible(num_modes);
-        addAndMakeVisible(detune);
-        addAndMakeVisible(exponent);
-        addAndMakeVisible(falloff);
         addAndMakeVisible(decay);
     }
 
@@ -107,58 +101,54 @@ namespace modal::plugin {
                 FlexItem(num_modes).withFlex(1),
                 FlexItem(foldback_mode).withFlex(1).withHeight(40).withAlignSelf(FlexItem::AlignSelf::center),
                 FlexItem(foldback_point).withFlex(1),
-                FlexItem(detune).withFlex(1),
-                FlexItem(exponent).withFlex(1),
-                FlexItem(falloff).withFlex(1),
                 FlexItem(decay).withFlex(1),
         };
 
         fb.performLayout(getLocalBounds().reduced(10));
     }
 
-    void MiniEditor::Sliders::setup(juce::AudioProcessorValueTreeState& plug_params) {
+    void MiniEditor::SpectrumControls::setup(juce::AudioProcessorValueTreeState& plug_params) {
         setMouseClickGrabsKeyboardFocus(false);
 
         macro.setup();
         addAndMakeVisible(macro);
 
-        slider1.setup(plug_params, "slider1");
-        slider2.setup(plug_params, "slider2");
+        detune.setup(plug_params, "detune");
+        exponent.setup(plug_params, "exponent");
+        falloff.setup(plug_params, "falloff");
+        even_gain.setup(plug_params, "even_gain");
 
-        dial1.setup(plug_params, "dial1");
-        dial2.setup(plug_params, "dial2");
 
         l.setJustificationType(Justification::centred);
         l.setFont(Font{FontOptions{24}});
 
-        addAndMakeVisible(slider1);
-        addAndMakeVisible(slider2);
-
-        addAndMakeVisible(dial1);
-        addAndMakeVisible(dial2);
+        addAndMakeVisible(detune);
+        addAndMakeVisible(exponent);
+        addAndMakeVisible(falloff);
+        addAndMakeVisible(even_gain);
         addAndMakeVisible(l);
 
     }
 
-    void MiniEditor::Sliders::paint(juce::Graphics& g) {
+    void MiniEditor::SpectrumControls::paint(juce::Graphics& g) {
         g.fillAll(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId));
     }
 
-    void MiniEditor::Sliders::resized() {
+    void MiniEditor::SpectrumControls::resized() {
         juce::Grid grid;
 
         using Track = juce::Grid::TrackInfo;
         using Fr = juce::Grid::Fr;
         using Item = juce::GridItem;
 
-        grid.templateRows = {Track{Fr{3}}, Track{Fr{5}}, Track{Fr{8}}, Track{Fr{16}}};
+        grid.templateRows = {Track{Fr{3}}, Track{Fr{5}}, Track{Fr{8}}, Track{Fr{8}}};
         grid.templateColumns = {Track{Fr{1}}, Track{Fr{1}}};
 
         grid.items = {
                 Item{l}.withColumn({1, 3}),
                 Item{macro}.withColumn({1, 3}),
-                Item{dial1}, Item{dial2},
-                Item{slider1}, Item{slider2},
+                Item{detune}, Item{exponent},
+                Item{falloff}, Item{even_gain},
         };
 
         grid.performLayout(getLocalBounds().reduced(10));

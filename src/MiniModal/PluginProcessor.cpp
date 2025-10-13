@@ -14,10 +14,7 @@ namespace modal::plugin {
                                      .withOutput("Output", juce::AudioChannelSet::stereo(), true)
 #endif
     ), params{*this, nullptr, juce::Identifier("MiniModal"), {
-            std::make_unique<juce::AudioParameterFloat>("slider1", "2ths mode amplitude", 0, 1, 1),
-            std::make_unique<juce::AudioParameterFloat>("slider2", "3ths mode amplitude", 0, 1, 1),
-            std::make_unique<juce::AudioParameterFloat>("dial1", "2ths mode position", 0, 1, 1),
-            std::make_unique<juce::AudioParameterFloat>("dial2", "3ths mode position", 0, 1, 1),
+            std::make_unique<juce::AudioParameterFloat>("even_gain", "Even Mode Amplitudes", 0, 1, 1),
             std::make_unique<juce::AudioParameterChoice>("foldback_mode", "Foldback Mode",
                                                          juce::StringArray{"Normal", "Undertones", "Foldback"}, 0),
             std::make_unique<juce::AudioParameterFloat>("foldback_point", "Foldback Point", 20, 20000, 1600),
@@ -30,7 +27,7 @@ namespace modal::plugin {
             std::make_unique<juce::AudioParameterFloat>("detune", "Mode Detune Linear", -0.06, 2, 0),
             std::make_unique<juce::AudioParameterFloat>("exponent", "Mode Detune Exponent", 0.1, 10, 1),
             std::make_unique<juce::AudioParameterFloat>("falloff", "Falloff Exponent", 0, 3, 1),
-            std::make_unique<juce::AudioParameterFloat>("decay", "Decay", NormalisableRange<float>{0.1f, 5.f}, 1),
+            std::make_unique<juce::AudioParameterFloat>("decay", "Decay", NormalisableRange<float>{0.1f, 5.f}, 1.f),
             std::make_unique<juce::AudioParameterChoice>("macro_thing", "Macro Thing", StringArray{"", ""}, 0, AudioParameterChoiceAttributes().withMeta(true))
     }},  mediator { *this, params }, controller{modal_synths} {
         params.state.addListener(this);
@@ -164,7 +161,7 @@ namespace modal::plugin {
                         *params.getRawParameterValue("exciter_rate"),
                         *params.getRawParameterValue("decay"),
                         *params.getRawParameterValue("falloff"),
-                        *params.getRawParameterValue("slider1")
+                        *params.getRawParameterValue("even_gain")
                 );
                 m.set_exciter(exciter_mode);
                 changed |= m.set_foldback_settings(foldback_mode,

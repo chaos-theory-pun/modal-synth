@@ -40,14 +40,11 @@ namespace modal::plugin {
         melatonin::Inspector inspector{*this, false};
 #endif
 
-        struct Controls : juce::Component {
+        struct Controls final : juce::Component {
             ui::BoundCombobox foldback_mode;
             ui::BoundSlider foldback_point{Slider::RotaryHorizontalVerticalDrag};
             ui::BoundSlider num_modes{Slider::RotaryHorizontalVerticalDrag};
-            ui::BoundSlider detune{Slider::RotaryHorizontalVerticalDrag};
-            ui::BoundSlider exponent{Slider::RotaryHorizontalVerticalDrag};
-            ui::BoundSlider falloff{Slider::RotaryHorizontalVerticalDrag};
-            ui::BoundSlider decay{Slider::RotaryHorizontalDrag};
+            ui::BoundSlider decay{Slider::RotaryHorizontalVerticalDrag};
 
             void setup(AudioProcessorValueTreeState& plug_params);
 
@@ -59,18 +56,17 @@ namespace modal::plugin {
 
         Controls controls;
 
-        struct Sliders : juce::Component {
+        struct SpectrumControls final : juce::Component {
             ui::MacroController::UI& macro;
 
-            ui::BoundSlider slider1{Slider::LinearVertical};
-            ui::BoundSlider slider2{Slider::LinearVertical};
+            ui::BoundSlider detune{Slider::RotaryHorizontalVerticalDrag};
+            ui::BoundSlider exponent{Slider::RotaryHorizontalVerticalDrag};
+            ui::BoundSlider falloff{Slider::RotaryHorizontalVerticalDrag};
+            ui::BoundSlider even_gain{Slider::RotaryHorizontalVerticalDrag};
 
-            ui::BoundSlider dial1{Slider::RotaryHorizontalVerticalDrag};
-            ui::BoundSlider dial2{Slider::RotaryHorizontalVerticalDrag};
+            Label l{"sliders_label", "Spectrum Controls"};
 
-            Label l{"sliders_label", "Mode Offsets"};
-
-            explicit Sliders(ui::MacroController::UI& m) : macro{m} {}
+            explicit SpectrumControls(ui::MacroController::UI& m) : macro{m} {}
 
             void setup(AudioProcessorValueTreeState& plug_params);
 
@@ -79,9 +75,9 @@ namespace modal::plugin {
             void resized() override;
         };
 
-        Sliders sliders {processorRef.mediator.get_ui()};
+        SpectrumControls spectrum_controls {processorRef.mediator.get_ui()};
 
-        struct ExciterControls : juce::Component {
+        struct ExciterControls final : juce::Component {
             ui::BoundCombobox exciter_mode;
             ui::BoundSlider exciter_rate{Slider::RotaryHorizontalVerticalDrag};
 
