@@ -57,16 +57,12 @@ namespace modal::plugin {
         Controls controls;
 
         struct SpectrumControls final : juce::Component {
-            ui::MacroController::UI& macro;
-
             ui::BoundSlider detune{Slider::RotaryHorizontalVerticalDrag};
             ui::BoundSlider exponent{Slider::RotaryHorizontalVerticalDrag};
             ui::BoundSlider falloff{Slider::RotaryHorizontalVerticalDrag};
             ui::BoundSlider even_gain{Slider::RotaryHorizontalVerticalDrag};
 
             Label l{"sliders_label", "Spectrum Controls"};
-
-            explicit SpectrumControls(ui::MacroController::UI& m) : macro{m} {}
 
             void setup(AudioProcessorValueTreeState& plug_params);
 
@@ -75,7 +71,7 @@ namespace modal::plugin {
             void resized() override;
         };
 
-        SpectrumControls spectrum_controls {processorRef.mediator.get_ui()};
+        SpectrumControls spectrum_controls;
 
         struct ExciterControls final : juce::Component {
             ui::BoundCombobox exciter_mode;
@@ -94,6 +90,17 @@ namespace modal::plugin {
         };
 
         ExciterControls exciter_controls;
+
+        struct MacroControls final : public juce::Component {
+            ui::BoundSlider macro_dial {Slider::RotaryHorizontalVerticalDrag};
+            ui::MacroController::UI& macro;
+            explicit MacroControls(ui::MacroController::UI& m) : macro{m} {}
+
+            void setup(AudioProcessorValueTreeState& plug_params);
+            void resized() override;
+        };
+
+        MacroControls macro_controls {processorRef.mediator.get_ui()};
 
         MidiKeyboardComponent keyboard {processorRef.keyboard_state, juce::KeyboardComponentBase::horizontalKeyboard};
 

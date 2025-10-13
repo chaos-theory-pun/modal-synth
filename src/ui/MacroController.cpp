@@ -80,9 +80,9 @@ namespace modal::ui {
         fb.flexDirection = juce::FlexBox::Direction::row;
 
         fb.items = {
-            juce::FlexItem{options}.withFlex(3),
-            juce::FlexItem{lo}.withFlex(2),
-            juce::FlexItem{hi}.withFlex(2)
+            juce::FlexItem{options}.withFlex(1).withHeight(40).withAlignSelf(juce::FlexItem::AlignSelf::center),
+            juce::FlexItem{lo}.withFlex(1),
+            juce::FlexItem{hi}.withFlex(1)
         };
 
         fb.performLayout(getLocalBounds());

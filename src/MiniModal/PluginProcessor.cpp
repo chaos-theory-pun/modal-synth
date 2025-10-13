@@ -28,7 +28,7 @@ namespace modal::plugin {
             std::make_unique<juce::AudioParameterFloat>("exponent", "Mode Detune Exponent", 0.1, 10, 1),
             std::make_unique<juce::AudioParameterFloat>("falloff", "Falloff Exponent", 0, 3, 1),
             std::make_unique<juce::AudioParameterFloat>("decay", "Decay", NormalisableRange<float>{0.1f, 5.f}, 1.f),
-            std::make_unique<juce::AudioParameterChoice>("macro_thing", "Macro Thing", StringArray{"", ""}, 0, AudioParameterChoiceAttributes().withMeta(true))
+            std::make_unique<juce::AudioParameterFloat>("macro_dial", "Macro Dial", NormalisableRange<float>{0.f, 1.f}, 0.5f, AudioParameterFloatAttributes().withMeta(true))
     }},  mediator { *this, params }, controller{modal_synths} {
         params.state.addListener(this);
     }

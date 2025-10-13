@@ -23,9 +23,11 @@ namespace modal::plugin {
         controls.setup(params);
         spectrum_controls.setup(params);
         exciter_controls.setup(params);
+        macro_controls.setup(params);
         addAndMakeVisible(controls);
         addAndMakeVisible(spectrum_controls);
         addAndMakeVisible(exciter_controls);
+        addAndMakeVisible(macro_controls);
 
         if (JUCEApplicationBase::isStandaloneApp()) {
             addAndMakeVisible(keyboard);
@@ -55,11 +57,12 @@ namespace modal::plugin {
         using Item = GridItem;
 
         grid.templateRows = {Track{Fr{200}}, Track{Fr{400}}};
-        grid.templateColumns = {Track{Fr{1}}, Track{Fr{1}}};
+        grid.templateColumns = {Track{Fr{2}}, Track{Fr{2}}, Track{Fr{2}}};
 
         grid.items = {
-                Item{controls}.withColumn({1, 4}),
-                Item{exciter_controls}, Item{spectrum_controls}
+            Item{controls}.withColumn({1, 3}),
+            Item{macro_controls}.withColumn({3, 4}).withRow({1, 3}),
+            Item{exciter_controls}, Item{spectrum_controls}
         };
 
         if (JUCEApplicationBase::isStandaloneApp()) {
@@ -110,9 +113,6 @@ namespace modal::plugin {
     void MiniEditor::SpectrumControls::setup(juce::AudioProcessorValueTreeState& plug_params) {
         setMouseClickGrabsKeyboardFocus(false);
 
-        macro.setup();
-        addAndMakeVisible(macro);
-
         detune.setup(plug_params, "detune");
         exponent.setup(plug_params, "exponent");
         falloff.setup(plug_params, "falloff");
@@ -141,12 +141,11 @@ namespace modal::plugin {
         using Fr = juce::Grid::Fr;
         using Item = juce::GridItem;
 
-        grid.templateRows = {Track{Fr{3}}, Track{Fr{5}}, Track{Fr{8}}, Track{Fr{8}}};
+        grid.templateRows = {Track{Fr{1}}, Track{Fr{4}}, Track{Fr{4}}};
         grid.templateColumns = {Track{Fr{1}}, Track{Fr{1}}};
 
         grid.items = {
                 Item{l}.withColumn({1, 3}),
-                Item{macro}.withColumn({1, 3}),
                 Item{detune}, Item{exponent},
                 Item{falloff}, Item{even_gain},
         };
@@ -197,5 +196,25 @@ namespace modal::plugin {
         grid.performLayout(getLocalBounds().reduced(10));
     }
 
+    void MiniEditor::MacroControls::setup(AudioProcessorValueTreeState& plug_params) {
+        macro.setup();
+        addAndMakeVisible(macro);
 
+        macro_dial.setup(plug_params, "macro_dial");
+        addAndMakeVisible(macro_dial);
+    }
+
+    void MiniEditor::MacroControls::resized() {
+        juce::FlexBox fb;
+        fb.flexWrap = juce::FlexBox::Wrap::wrap;
+        fb.justifyContent = juce::FlexBox::JustifyContent::center;
+        fb.alignContent = juce::FlexBox::AlignContent::stretch;
+        fb.flexDirection = juce::FlexBox::Direction::column;
+        fb.items = {
+            FlexItem(macro_dial).withFlex(1),
+            FlexItem(macro).withFlex(1),
+        };
+
+        fb.performLayout(getLocalBounds().reduced(10));
+    }
 }
