@@ -163,16 +163,9 @@ namespace modal::plugin {
                         *params.getRawParameterValue("exponent"),
                         *params.getRawParameterValue("exciter_rate"),
                         *params.getRawParameterValue("decay"),
-                        *params.getRawParameterValue("falloff")
+                        *params.getRawParameterValue("falloff"),
+                        *params.getRawParameterValue("slider1")
                 );
-                changed |= m.set_mode_freqs({
-                                                    params.getRawParameterValue("dial1")->load(),
-                                                    params.getRawParameterValue("dial2")->load()
-                });
-                changed |= m.set_mode_gains({
-                                                    params.getRawParameterValue("slider1")->load(),
-                                                    params.getRawParameterValue("slider2")->load()
-                });
                 m.set_exciter(exciter_mode);
                 changed |= m.set_foldback_settings(foldback_mode,
                                                    params.getRawParameterValue("foldback_point")->load());

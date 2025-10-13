@@ -13,52 +13,6 @@
 #include <dsp/formant.hpp>
 
 namespace modal::dsp::synth {
-    /// @private
-    class MiniModalControls {
-        template <size_t>
-        friend class MiniModalSynth;
-        std::array<modal::dsp::num, 2> freq_params = {};
-        std::array<modal::dsp::num, 2> gain_params = {};
-     public:
-
-        [[nodiscard]] modal::dsp::num freq_param_for_mode(const size_t mode) const {
-            if (mode <= 0) {
-                return 1.0;
-            }
-            modal::dsp::num factor = 1.0;
-            if (mode % 2 == 1) {
-                factor *= freq_params[0];
-            }
-            if (mode % 3 == 2) {
-                factor *= freq_params[1];
-            }
-            return factor;
-        }
-
-        [[nodiscard]] modal::dsp::num gain_param_for_mode(const size_t mode) const {
-            if (mode <= 0) {
-                return 1.0;
-            }
-            modal::dsp::num factor = 1.0;
-            if (mode % 2 == 1) {
-                factor *= gain_params[0];
-            }
-            if (mode % 3 == 2) {
-                factor *= gain_params[1];
-            }
-            return factor;
-        }
-
-
-        void set_freqs(const std::array<modal::dsp::num, 2>& new_freqs) {
-            freq_params = new_freqs;
-        }
-
-        void set_gains(const std::array<modal::dsp::num, 2>& new_gains) {
-            gain_params = new_gains;
-        }
-    };
-
     /// @brief Kinds of exciter for the modal synth
     enum class MiniModalExiterKind {
         /// Impulse (tone will decay).
@@ -103,7 +57,6 @@ namespace modal::dsp::synth {
     template<size_t maxModes>
     class MiniModalSynth {
         std::array<physical::filters::PhasorResonator, maxModes> modes;
-        MiniModalControls controls;
         size_t currentModes = maxModes;
         modal::dsp::num inharmonicity = 0;
         modal::dsp::num exponent = 0;
@@ -111,6 +64,7 @@ namespace modal::dsp::synth {
         modal::dsp::num velocity = 1;
         modal::dsp::num decay = 1;
         modal::dsp::num falloff = 1;
+        modal::dsp::num even_gain = 1;
 
         MiniModalExiterKind exciter = MiniModalExiterKind::Noise;
         modal::dsp::num exciter_rate = 20;
@@ -219,11 +173,11 @@ namespace modal::dsp::synth {
          * @param flof Exponential falloff of increasing modes, usually between 0 and 3
          * @return If coefficients need to be updated
          */
-        bool set_params(size_t num_modes, modal::dsp::num inharm, modal::dsp::num expo, modal::dsp::num e_rate, modal::dsp::num dcy, modal::dsp::num flof) {
+        bool set_params(size_t num_modes, modal::dsp::num inharm, modal::dsp::num expo, modal::dsp::num e_rate, modal::dsp::num dcy, modal::dsp::num flof, modal::dsp::num eg) {
             bool changed = false;
             if (num_modes != currentModes || inharm != inharmonicity
                 || expo != exponent || e_rate != exciter_rate
-                || dcy != decay || flof != falloff) {
+                || dcy != decay || flof != falloff || eg != even_gain) {
                 changed = true;
             }
             currentModes = num_modes;
@@ -232,33 +186,10 @@ namespace modal::dsp::synth {
             exciter_rate = e_rate;
             decay = dcy;
             falloff = flof;
+            even_gain = eg;
             return changed;
         }
 #pragma clang diagnostic pop
-
-        /** @brief Update frequency shift of every 2nd and every 3rd mode.
-         *
-         * Requires updating coefficients.
-         * @param new_freqs Frequency shift, like `ModalControls`
-         * @return If coefficients need to be updated
-         */
-        bool set_mode_freqs(const std::array<modal::dsp::num, 2>& new_freqs) {
-            bool changed = controls.freq_params != new_freqs;
-            controls.set_freqs(new_freqs);
-            return changed;
-        }
-
-        /** @brief Update frequency shift of every 2nd and every 3rd mode.
-         *
-         * Requires updating coefficients.
-         * @param new_gains
-         * @return If coefficients need to be updated
-         */
-        bool set_mode_gains(const std::array<modal::dsp::num, 2>& new_gains) {
-            bool changed = controls.gain_params != new_gains;
-            controls.set_gains(new_gains);
-            return changed;
-        }
 
         /** @brief Sets the timings for the envelope of the exciter.
          * @param attack Attack time, in seconds
@@ -285,7 +216,7 @@ namespace modal::dsp::synth {
         }
 #pragma clang diagnostic pop
 
-        /** @brief Sets the internal sample rate of the oscillator.
+        /** @brief Sets the internal sample rate of the synthesiser.
          *
          * Behaves as described in [the DSP coding standards](docs/DSP Coding Standards.md)
          */
@@ -308,10 +239,10 @@ namespace modal::dsp::synth {
                     for (size_t i = 0; i < currentModes; i++) {
                         num mode_idx = static_cast<num>(i); // i
                         num mode_idx_p1 = mode_idx + 1; // k
-                        modal::dsp::num overtone = mode_idx_p1 * (1 + mode_idx * (inharmonicity * controls.freq_param_for_mode(i)));
+                        num mode_gain = i % 2 == 1 ? even_gain : 1_nm;
+                        modal::dsp::num overtone = mode_idx_p1 * (1 + mode_idx * (inharmonicity));
                         modal::dsp::num mode_freq = freq * std::pow(overtone, exponent);
-                        modal::dsp::num distance = (2.0_nm / std::pow((mode_idx + 1.0_nm), falloff)) * controls.gain_param_for_mode(
-                                i);
+                        modal::dsp::num distance = (2.0_nm / std::pow((mode_idx + 1.0_nm), falloff)) * mode_gain;
                         modes[i].set_params(mode_freq, distance, distance * decay);
                     }
                     break;
@@ -320,9 +251,10 @@ namespace modal::dsp::synth {
                     for (size_t i = 0; i < currentModes; i++) {
                         num mode_idx = static_cast<num>(i); // i
                         num mode_idx_p1 = mode_idx + 1; // k
-                        modal::dsp::num overtone = mode_idx_p1 * (1 + mode_idx * (inharmonicity * controls.freq_param_for_mode(i)));
+                        num mode_gain = i % 2 == 1 ? even_gain : 1_nm;
+                        modal::dsp::num overtone = mode_idx_p1 * (1 + mode_idx * (inharmonicity));
                         modal::dsp::num mode_freq = freq / std::pow(overtone, exponent);
-                        modal::dsp::num distance = (2.0_nm / std::pow((mode_idx + 1.0_nm), falloff)) * controls.gain_param_for_mode(i);
+                        modal::dsp::num distance = (2.0_nm / std::pow((mode_idx + 1.0_nm), falloff)) * mode_gain;
                         modes[i].set_params(mode_freq, distance, distance * decay);
                     }
                     break;
@@ -331,13 +263,14 @@ namespace modal::dsp::synth {
                     for (size_t i = 0; i < currentModes; i++) {
                         num mode_idx = static_cast<num>(i); // i
                         num mode_idx_p1 = mode_idx + 1; // k
-                        modal::dsp::num overtone = mode_idx_p1 * (1 + mode_idx * (inharmonicity * controls.freq_param_for_mode(i)));
+                        num mode_gain = i % 2 == 1 ? even_gain : 1_nm;
+                        modal::dsp::num overtone = mode_idx_p1 * (1 + mode_idx * (inharmonicity));
                         modal::dsp::num mode_freq = freq * std::pow(overtone, exponent);
                         // see https://www.desmos.com/calculator/2kbqwfyvjn
                         if (mode_freq > foldback.foldback_point) {
                             mode_freq = (2 * foldback.foldback_point) - mode_freq;
                         }
-                        modal::dsp::num distance = (2.0_nm / std::pow((mode_idx + 1.0_nm), falloff)) * controls.gain_param_for_mode(i);
+                        modal::dsp::num distance = (2.0_nm / std::pow((mode_idx + 1.0_nm), falloff)) * mode_gain;
                         modes[i].set_params(mode_freq, distance, distance * decay);
                     }
                     break;
