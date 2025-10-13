@@ -8,6 +8,7 @@
 #include <ui/BoundCombobox.hpp>
 #include <ui/BoundSlider.hpp>
 #include <ui/LookAndFeel.hpp>
+#include <ui/MacroController.hpp>
 
 #ifdef MODAL_DEBUG_UI
 #include "melatonin_inspector/melatonin_inspector.h"
@@ -31,9 +32,9 @@ namespace modal::plugin {
         // This reference is provided as a quick way for your editor to
         // access the processor object that created it.
         MiniProcessor& processorRef;
+        ui::ModalLookAndFeel laf;
         juce::AudioProcessorValueTreeState& params;
         juce::ComponentBoundsConstrainer constraints;
-        ui::ModalLookAndFeel laf;
 
 #ifdef MODAL_DEBUG_UI
         melatonin::Inspector inspector{*this, false};
@@ -59,6 +60,8 @@ namespace modal::plugin {
         Controls controls;
 
         struct Sliders : juce::Component {
+            ui::MacroController::UI& macro;
+
             ui::BoundSlider slider1{Slider::LinearVertical};
             ui::BoundSlider slider2{Slider::LinearVertical};
 
@@ -67,6 +70,7 @@ namespace modal::plugin {
 
             Label l{"sliders_label", "Mode Offsets"};
 
+            explicit Sliders(ui::MacroController::UI& m) : macro{m} {}
 
             void setup(AudioProcessorValueTreeState& plug_params);
 
@@ -75,7 +79,7 @@ namespace modal::plugin {
             void resized() override;
         };
 
-        Sliders sliders;
+        Sliders sliders {processorRef.mediator.get_ui()};
 
         struct ExciterControls : juce::Component {
             ui::BoundCombobox exciter_mode;

@@ -6,6 +6,7 @@
 
 #include <dsp/mini_modal_synth.hpp>
 #include <dsp/control.hpp>
+#include "ui/MacroController.hpp"
 
 namespace modal::plugin {
 //==============================================================================
@@ -64,10 +65,13 @@ namespace modal::plugin {
 
         juce::MidiKeyboardState keyboard_state;
 
-     private:
+    private:
         //==============================================================================
         juce::AudioProcessorValueTreeState params;
         std::atomic_bool params_changed = true;
+    public: // mediator needs to be init'd after params
+        ui::MacroController mediator;
+    private:
 
         std::array<dsp::synth::MiniModalSynth<40>, 16> modal_synths;
         dsp::PolyController<dsp::synth::MiniModalSynth<40>, 16> controller;

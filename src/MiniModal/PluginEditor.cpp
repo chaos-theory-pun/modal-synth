@@ -119,6 +119,9 @@ namespace modal::plugin {
     void MiniEditor::Sliders::setup(juce::AudioProcessorValueTreeState& plug_params) {
         setMouseClickGrabsKeyboardFocus(false);
 
+        macro.setup();
+        addAndMakeVisible(macro);
+
         slider1.setup(plug_params, "slider1");
         slider2.setup(plug_params, "slider2");
 
@@ -148,11 +151,12 @@ namespace modal::plugin {
         using Fr = juce::Grid::Fr;
         using Item = juce::GridItem;
 
-        grid.templateRows = {Track{Fr{3}}, Track{Fr{8}}, Track{Fr{16}}};
+        grid.templateRows = {Track{Fr{3}}, Track{Fr{5}}, Track{Fr{8}}, Track{Fr{16}}};
         grid.templateColumns = {Track{Fr{1}}, Track{Fr{1}}};
 
         grid.items = {
                 Item{l}.withColumn({1, 3}),
+                Item{macro}.withColumn({1, 3}),
                 Item{dial1}, Item{dial2},
                 Item{slider1}, Item{slider2},
         };

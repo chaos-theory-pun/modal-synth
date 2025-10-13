@@ -33,6 +33,8 @@ set(common_sources
         src/ui/BoundCombobox.cpp
         include/ui/BoundSlider.hpp
         src/ui/BoundSlider.cpp
+        include/ui/MacroController.hpp
+        src/ui/MacroController.cpp
         include/ui/LookAndFeel.hpp
 
         include/dsp/dsp.hpp
