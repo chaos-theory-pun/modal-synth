@@ -3,26 +3,36 @@
 #include <ui/MacroController.hpp>
 #include <print>
 
+#include <dsp/bonus.hpp>
+
 namespace modal::ui {
-    MacroController::MacroController(juce::AudioProcessor& processor, juce::AudioProcessorValueTreeState& tree) {
+    MacroController::MacroController(const juce::AudioProcessor& processor) {
         for (const auto& p : processor.getParameters()) {
             auto p2 = dynamic_cast<juce::RangedAudioParameter*>(p);
             if (!p2->isMetaParameter() && typeid(*p2) == typeid(juce::AudioParameterFloat)) {
                 const auto p3 = dynamic_cast<juce::AudioParameterFloat*>(p);
                 const auto id = p2->getParameterID();
                 const auto name = p2->getName(32);
-                // std::println("param:\t{}\t(non-meta float)", id.toStdString());
-                params.emplace_back(id, name, *p3, tree.getParameterAsValue(id));
+                params.emplace_back(id, name, *p3);
             }
         }
-        // std::println("items {}", params.size());
     }
 
-    void MacroController::set_values(modal::dsp::num) {
+    void MacroController::set_values(const modal::dsp::num n) const {
+        for (auto& s : ui.settingses) {
+            const auto param_i = static_cast<size_t>(s.options.getSelectedId());
+            if (param_i > 1) {
+                auto p = params[param_i - 2];
+                const auto lo = s.lo.getNormalisableRange().convertTo0to1(s.lo.getValue());
+                const auto hi = s.hi.getNormalisableRange().convertTo0to1(s.hi.getValue());
+                const auto new_unit = dsp::bonus::lerp(static_cast<dsp::num>(lo), static_cast<dsp::num>(hi), n);
+                // p.pm.beginChangeGesture(); // todo: this
+                p.pm.setValueNotifyingHost(new_unit);
+            }
+        }
     }
 
     MacroController::UI& MacroController::get_ui() {
-        // UI ui {*this};
         return ui;
     }
 
@@ -53,10 +63,12 @@ namespace modal::ui {
 
 
     void MacroController::MacroSettings::setup() {
+        options.addItem("<no mapping>", 1);
         for (size_t i = 0; i < parent.params.size(); i++) {
             const auto& pi = parent.params[i];
-            options.addItem(pi.name, static_cast<int>(i) + 1);
+            options.addItem(pi.name, static_cast<int>(i) + 2);
         }
+        options.setSelectedId(1);
 
         options.addListener(&parent);
         addAndMakeVisible(options);
@@ -102,13 +114,23 @@ namespace modal::ui {
 
     void MacroController::comboBoxChanged(juce::ComboBox* comboBoxThatHasChanged) {
         const auto parent = comboBoxThatHasChanged->getParentComponent();
-        const auto i = static_cast<size_t>(comboBoxThatHasChanged->getSelectedId() - 1);
-        const auto param = params[i];
+        const auto combo_idx = static_cast<size_t>(comboBoxThatHasChanged->getSelectedId());
 
-        const auto range = convert_nr<float, double>(param.pm.getNormalisableRange());
         const auto lo_slider = dynamic_cast<juce::Slider*>(parent->findChildWithID("mod_low"));
         const auto hi_slider = dynamic_cast<juce::Slider*>(parent->findChildWithID("mod_high"));
-        lo_slider->setNormalisableRange(range);
-        hi_slider->setNormalisableRange(range);
+
+        if (combo_idx == 1) { // no mapping
+            lo_slider->setEnabled(false);
+            hi_slider->setEnabled(false);
+        } else {
+            const auto param = params[combo_idx - 2];
+            const auto range = convert_nr<float, double>(param.pm.getNormalisableRange());
+
+            lo_slider->setEnabled(true);
+            hi_slider->setEnabled(true);
+
+            lo_slider->setNormalisableRange(range);
+            hi_slider->setNormalisableRange(range);
+        }
     }
 }

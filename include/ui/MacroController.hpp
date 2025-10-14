@@ -15,14 +15,13 @@ namespace modal::ui {
             juce::String id;
             juce::String name;
             juce::AudioParameterFloat& pm;
-            juce::Value val;
         };
 
         std::vector<ParamInfo> params;
 
         public:
-            explicit MacroController(juce::AudioProcessor& processor, juce::AudioProcessorValueTreeState& tree);
-            void set_values(modal::dsp::num);
+            explicit MacroController(const juce::AudioProcessor& processor);
+            void set_values(modal::dsp::num n) const;
 
             class MacroSettings final : public juce::Component {
                 friend class MacroController;

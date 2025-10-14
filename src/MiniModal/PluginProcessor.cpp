@@ -29,7 +29,7 @@ namespace modal::plugin {
             std::make_unique<juce::AudioParameterFloat>("falloff", "Falloff Exponent", 0, 3, 1),
             std::make_unique<juce::AudioParameterFloat>("decay", "Decay", NormalisableRange<float>{0.1f, 5.f}, 1.f),
             std::make_unique<juce::AudioParameterFloat>("macro_dial", "Macro Dial", NormalisableRange<float>{0.f, 1.f}, 0.5f, AudioParameterFloatAttributes().withMeta(true))
-    }},  mediator { *this, params }, controller{modal_synths} {
+    }},  mediator { *this }, controller{modal_synths} {
         params.state.addListener(this);
     }
 
@@ -140,6 +140,8 @@ namespace modal::plugin {
                 controller.key_up(m.getNoteNumber());
             }
         }
+
+        mediator.set_values(*params.getRawParameterValue("macro_dial"));
 
         if (params_changed) {
             params_changed = false;
