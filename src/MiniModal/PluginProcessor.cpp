@@ -210,7 +210,10 @@ namespace modal::plugin {
 
 //==============================================================================
     void MiniProcessor::getStateInformation(juce::MemoryBlock& destData) {
-        const auto state = params.copyState();
+        juce::ValueTree state {"MiniModalSettings"};
+        state.addChild(params.copyState(), -1, nullptr);
+        state.addChild(mediator.dump_state(), -1, nullptr);
+
         const std::unique_ptr<juce::XmlElement> xml(state.createXml());
         copyXmlToBinary(*xml, destData);
     }
@@ -219,8 +222,18 @@ namespace modal::plugin {
         const std::unique_ptr<juce::XmlElement> xmlState(getXmlFromBinary(data, sizeInBytes));
 
         if (xmlState != nullptr) {
-            if (xmlState->hasTagName(params.state.getType())) {
-                params.replaceState(juce::ValueTree::fromXml(*xmlState));
+            const auto state = juce::ValueTree::fromXml(*xmlState);
+
+            {
+                const auto param_state = state.getChild(0);
+                if (param_state.hasType(params.state.getType())) {
+                    params.replaceState(param_state);
+                }
+            }
+
+            {
+                const auto macro_state = state.getChild(1);
+                mediator.load_state(macro_state);
             }
         }
     }

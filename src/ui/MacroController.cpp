@@ -16,6 +16,10 @@ namespace modal::ui {
                 params.emplace_back(id, name, *p3);
             }
         }
+
+        for (auto& s : ui.settingses) {
+            s.add_params();
+        }
     }
 
     void MacroController::set_values(const modal::dsp::num n) const {
@@ -34,6 +38,32 @@ namespace modal::ui {
 
     MacroController::UI& MacroController::get_ui() {
         return ui;
+    }
+
+    juce::ValueTree MacroController::dump_state() const {
+        juce::ValueTree state{"MacroController"};
+        for (auto& s : ui.settingses) {
+            juce::ValueTree setting{"MacroControllerSetting"};
+            setting.setProperty("param_i", s.options.getSelectedId(), nullptr);
+            setting.setProperty("lo", s.lo.getValue(), nullptr);
+            setting.setProperty("hi", s.hi.getValue(), nullptr);
+            state.addChild(setting, -1, nullptr);
+        }
+        return state;
+    }
+
+    // todo: add error checking
+    void MacroController::load_state(const juce::ValueTree& state) {
+        for (int i = 0; i < state.getNumChildren(); i++) {
+            auto& s = ui.settingses[i];
+            auto setting = state.getChild(i);
+            auto param_id = setting.getProperty("param_i").operator int();
+            auto lo_val = setting.getProperty("lo").operator double();
+            auto hi_val = setting.getProperty("hi").operator double();
+            s.options.setSelectedId(param_id, juce::sendNotificationSync); // see https://forum.juce.com/t/question-request-re-var/19445/2
+            s.lo.setValue(lo_val);
+            s.hi.setValue(hi_val);
+        }
     }
 
     void MacroController::UI::setup() {
@@ -62,14 +92,16 @@ namespace modal::ui {
     }
 
 
-    void MacroController::MacroSettings::setup() {
+    void MacroController::MacroSettings::add_params() {
         options.addItem("<no mapping>", 1);
         for (size_t i = 0; i < parent.params.size(); i++) {
             const auto& pi = parent.params[i];
             options.addItem(pi.name, static_cast<int>(i) + 2);
         }
         options.setSelectedId(1);
+    }
 
+    void MacroController::MacroSettings::setup() {
         options.addListener(&parent);
         addAndMakeVisible(options);
 

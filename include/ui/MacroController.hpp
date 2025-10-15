@@ -29,6 +29,7 @@ namespace modal::ui {
                 juce::Slider lo {"mod_low"}, hi {"mod_high"};
                 MacroController& parent;
                 explicit MacroSettings(MacroController& p) : parent{p} {}
+                void add_params();
              public:
                 MacroSettings(const MacroSettings& old) : parent {old.parent} {}
                 void setup();
@@ -51,6 +52,9 @@ namespace modal::ui {
             UI ui {*this};
 
             UI& get_ui();
+
+            juce::ValueTree dump_state() const;
+            void load_state(const juce::ValueTree& state);
 
             void comboBoxChanged(juce::ComboBox* comboBoxThatHasChanged) override;
     };
