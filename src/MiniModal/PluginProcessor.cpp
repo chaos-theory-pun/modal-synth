@@ -28,8 +28,9 @@ namespace modal::plugin {
             std::make_unique<juce::AudioParameterFloat>("exponent", "Mode Detune Exponent", 0.1, 10, 1),
             std::make_unique<juce::AudioParameterFloat>("falloff", "Falloff Exponent", 0, 3, 1),
             std::make_unique<juce::AudioParameterFloat>("decay", "Decay", NormalisableRange<float>{0.1f, 5.f}, 1.f),
-            std::make_unique<juce::AudioParameterFloat>("macro_dial", "Macro Dial", NormalisableRange<float>{0.f, 1.f}, 0.5f, AudioParameterFloatAttributes().withMeta(true))
-    }},  mediator { *this }, controller{modal_synths} {
+            std::make_unique<juce::AudioParameterFloat>("macro_control_1", "Macro Control 1", NormalisableRange<float>{0.f, 1.f}, 0.5f, AudioParameterFloatAttributes().withMeta(true)),
+            std::make_unique<juce::AudioParameterFloat>("macro_control_2", "Macro Control 2", NormalisableRange<float>{0.f, 1.f}, 0.5f, AudioParameterFloatAttributes().withMeta(true))
+    }},  macro_control_1 { *this }, macro_control_2 { *this }, controller{ modal_synths } {
         params.state.addListener(this);
     }
 
@@ -141,7 +142,8 @@ namespace modal::plugin {
             }
         }
 
-        mediator.set_values(*params.getRawParameterValue("macro_dial"));
+        macro_control_1.set_values(*params.getRawParameterValue("macro_control_1"));
+        macro_control_2.set_values(*params.getRawParameterValue("macro_control_2"));
 
         if (params_changed) {
             params_changed = false;
@@ -212,7 +214,8 @@ namespace modal::plugin {
     void MiniProcessor::getStateInformation(juce::MemoryBlock& destData) {
         juce::ValueTree state {"MiniModalSettings"};
         state.addChild(params.copyState(), -1, nullptr);
-        state.addChild(mediator.dump_state(), -1, nullptr);
+        state.addChild(macro_control_1.dump_state(), -1, nullptr);
+        state.addChild(macro_control_2.dump_state(), -1, nullptr);
 
         const std::unique_ptr<juce::XmlElement> xml(state.createXml());
         copyXmlToBinary(*xml, destData);
@@ -233,7 +236,12 @@ namespace modal::plugin {
 
             {
                 const auto macro_state = state.getChild(1);
-                mediator.load_state(macro_state);
+                macro_control_1.load_state(macro_state);
+            }
+
+            {
+                const auto macro_state = state.getChild(2);
+                macro_control_2.load_state(macro_state);
             }
         }
     }

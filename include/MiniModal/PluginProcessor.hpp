@@ -70,7 +70,9 @@ namespace modal::plugin {
         juce::AudioProcessorValueTreeState params;
         std::atomic_bool params_changed = true;
     public: // mediator needs to be init'd after params
-        ui::MacroController mediator;
+        ui::MacroController macro_control_1;
+        ui::MacroController macro_control_2;
+
     private:
 
         std::array<dsp::synth::MiniModalSynth<40>, 16> modal_synths;

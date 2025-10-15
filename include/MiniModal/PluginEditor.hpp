@@ -92,15 +92,17 @@ namespace modal::plugin {
         ExciterControls exciter_controls;
 
         struct MacroControls final : public juce::Component {
-            ui::BoundSlider macro_dial {Slider::RotaryHorizontalVerticalDrag};
-            ui::MacroController::UI& macro;
-            explicit MacroControls(ui::MacroController::UI& m) : macro{m} {}
+            ui::BoundSlider macro_1_dial {Slider::RotaryHorizontalVerticalDrag};
+            ui::MacroController::UI& macro_1;
+            ui::BoundSlider macro_2_dial {Slider::RotaryHorizontalVerticalDrag};
+            ui::MacroController::UI& macro_2;
+            explicit MacroControls(ui::MacroController::UI& m1, ui::MacroController::UI& m2) : macro_1{m1}, macro_2{m2} {}
 
             void setup(AudioProcessorValueTreeState& plug_params);
             void resized() override;
         };
 
-        MacroControls macro_controls {processorRef.mediator.get_ui()};
+        MacroControls macro_controls {processorRef.macro_control_1.get_ui(), processorRef.macro_control_2.get_ui()};
 
         MidiKeyboardComponent keyboard {processorRef.keyboard_state, juce::KeyboardComponentBase::horizontalKeyboard};
 

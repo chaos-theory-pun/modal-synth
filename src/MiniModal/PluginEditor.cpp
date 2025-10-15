@@ -197,11 +197,17 @@ namespace modal::plugin {
     }
 
     void MiniEditor::MacroControls::setup(AudioProcessorValueTreeState& plug_params) {
-        macro.setup();
-        addAndMakeVisible(macro);
+        macro_1.setup();
+        addAndMakeVisible(macro_1);
 
-        macro_dial.setup(plug_params, "macro_dial");
-        addAndMakeVisible(macro_dial);
+        macro_1_dial.setup(plug_params, "macro_control_1");
+        addAndMakeVisible(macro_1_dial);
+
+        macro_2.setup();
+        addAndMakeVisible(macro_2);
+
+        macro_2_dial.setup(plug_params, "macro_control_2");
+        addAndMakeVisible(macro_2_dial);
     }
 
     void MiniEditor::MacroControls::resized() {
@@ -211,8 +217,10 @@ namespace modal::plugin {
         fb.alignContent = juce::FlexBox::AlignContent::stretch;
         fb.flexDirection = juce::FlexBox::Direction::column;
         fb.items = {
-            FlexItem(macro_dial).withFlex(1),
-            FlexItem(macro).withFlex(1),
+            FlexItem(macro_1_dial).withFlex(2),
+            FlexItem(macro_1).withFlex(4),
+            FlexItem(macro_2_dial).withFlex(2),
+            FlexItem(macro_2).withFlex(4),
         };
 
         fb.performLayout(getLocalBounds().reduced(10));
