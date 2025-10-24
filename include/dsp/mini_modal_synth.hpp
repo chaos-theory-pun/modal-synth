@@ -9,8 +9,7 @@
 #include <dsp/mod.hpp>
 #include <randutils.hpp>
 #include <dsp/osc.hpp>
-
-#include <dsp/formant.hpp>
+#include <dsp/delay.hpp>
 
 namespace modal::dsp::synth {
     /// @brief Kinds of exciter for the modal synth
@@ -71,7 +70,9 @@ namespace modal::dsp::synth {
         modal::dsp::osc::Phasor osc_exciter {48000};
         FoldbackSettings foldback;
 
+        modal::dsp::delay_line feedback_line {0_nm, 1_nm};
         modal::dsp::num feedback_reg = 0;
+        modal::dsp::num feedback_time = 0;
         modal::dsp::num feedback_amount = 0;
 
         modal::dsp::mod::AHREnv env;
@@ -123,7 +124,7 @@ namespace modal::dsp::synth {
          */
         modal::dsp::num tick() {
             // modal::dsp::num to_mode =  * env.tick();
-            auto last_out = feedback_reg;
+            auto fb_out = feedback_reg;
             modal::dsp::num to_mode = 0;
 
             osc_exciter.tick();
@@ -141,6 +142,8 @@ namespace modal::dsp::synth {
 
             to_mode *= env.tick();
 
+            to_mode += fb_out * feedback_amount;
+
             modal::dsp::num modes_out = 0;
             for (size_t i = 0; i < currentModes; i++) {
                 modes_out += modes[i].tick(to_mode);
@@ -148,11 +151,11 @@ namespace modal::dsp::synth {
 
             modal::dsp::num out = modes_out;
             
-            out += last_out * feedback_amount;
+            // out += fb_out * feedback_amount;
 
             out *= (velocity * velocity);
 
-
+            feedback_line.push_sample(out);
             feedback_reg = out;
 
             return out;
@@ -200,8 +203,9 @@ namespace modal::dsp::synth {
         }
 #pragma clang diagnostic pop
 
-        void set_feedback_settings(const modal::dsp::num amt) {
+        void set_feedback_settings(const modal::dsp::num amt, const modal::dsp::num time) {
             feedback_amount = amt;
+            feedback_time = time;
         }
 
         /** @brief Sets the timings for the envelope of the exciter.
@@ -239,6 +243,7 @@ namespace modal::dsp::synth {
             }
             env.set_sample_rate(sr);
             osc_exciter.set_sample_rate(sr);
+            feedback_line.set_sample_rate(sr);
         }
 
         /** @brief Update the internal coefficients of the modal filters
