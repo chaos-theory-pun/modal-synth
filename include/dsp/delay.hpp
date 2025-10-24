@@ -9,55 +9,29 @@
 namespace modal::dsp {
     class delay_line {
         public:
-            delay_line(const num sr, const num mt) : sample_rate{sr}, max_time {mt} {
-                buffer.resize(sr * max_time, 0.0);
-            }
+            delay_line(num sr, num mt);
 
-            void push_sample(num s) {
-                buffer[idx] = s;
-                idx = (idx + 1) % static_cast<int>(buffer.size());
-            }
+            void push_sample(num s);
 
-            num fetch_sample_s(const num time_backwards) {
-                const num samps_back = time_backwards * sample_rate;
-                const int idx_1 = static_cast<int>(samps_back);
-                const int idx_2 = idx_1 + 1;
-                const num frac = samps_back - static_cast<int>(samps_back);
-
-                return dsp::bonus::lerp(fetch_sample_sm(idx_1), fetch_sample_sm(idx_2), frac);
-            }
+            [[nodiscard]] num fetch_sample_s(num time_backwards) const;
 
             // with -O1 and better this optimises smaller than `(i % len + len) % len` on x64 and ARM - https://godbolt.org/z/aj1GsTovM
-            num fetch_sample_sm(const int samps_backwards) {
-                long get_idx = idx - samps_backwards;
-                if (get_idx < 0) {
-                    get_idx += static_cast<long>(get_max_samples());
-                }
-                return buffer[get_idx];
-            }
+            [[nodiscard]] num fetch_sample_sm(int samps_backwards) const;
 
-            void set_sample_rate(const num sr) {
-                sample_rate = sr;
-                buffer.resize(sr * max_time, 0.0);
-            }
+            void set_sample_rate(num sr);
 
-            void set_max_time(const num new_max_time) {
-                max_time = new_max_time;
-                buffer.resize(sample_rate * max_time, 0.0);
-            }
+            void set_max_time(num new_max_time);
 
-            [[nodiscard]] num get_max_time() const {
-                return static_cast<num>(buffer.size()) / static_cast<num>(sample_rate);
-            }
+            [[nodiscard]] num get_max_time() const;
 
-            [[nodiscard]] unsigned long get_max_samples() const {
-                return buffer.size();
-            }
+            [[nodiscard]] unsigned long get_max_samples() const;
 
         private:
+            void resize_buffer();
+
             num sample_rate = 0;
             num max_time = 0;
-            int idx = 0;
+            unsigned long idx = 0;
             std::vector<num> buffer;
     };
 }
