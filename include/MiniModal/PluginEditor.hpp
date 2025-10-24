@@ -45,6 +45,7 @@ namespace modal::plugin {
             ui::BoundSlider foldback_point{Slider::RotaryHorizontalVerticalDrag};
             ui::BoundSlider num_modes{Slider::RotaryHorizontalVerticalDrag};
             ui::BoundSlider decay{Slider::RotaryHorizontalVerticalDrag};
+            ui::BoundSlider fb_amount { Slider::RotaryHorizontalVerticalDrag };
 
             void setup(AudioProcessorValueTreeState& plug_params);
 

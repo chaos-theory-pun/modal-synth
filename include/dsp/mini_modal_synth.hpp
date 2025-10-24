@@ -71,6 +71,9 @@ namespace modal::dsp::synth {
         modal::dsp::osc::Phasor osc_exciter {48000};
         FoldbackSettings foldback;
 
+        modal::dsp::num feedback_reg = 0;
+        modal::dsp::num feedback_amount = 0;
+
         modal::dsp::mod::AHREnv env;
         randutils::default_rng noise;
 
@@ -120,6 +123,7 @@ namespace modal::dsp::synth {
          */
         modal::dsp::num tick() {
             // modal::dsp::num to_mode =  * env.tick();
+            auto last_out = feedback_reg;
             modal::dsp::num to_mode = 0;
 
             osc_exciter.tick();
@@ -143,8 +147,13 @@ namespace modal::dsp::synth {
             }
 
             modal::dsp::num out = modes_out;
+            
+            out += last_out * feedback_amount;
 
             out *= (velocity * velocity);
+
+
+            feedback_reg = out;
 
             return out;
         }
@@ -190,6 +199,10 @@ namespace modal::dsp::synth {
             return changed;
         }
 #pragma clang diagnostic pop
+
+        void set_feedback_settings(const modal::dsp::num amt) {
+            feedback_amount = amt;
+        }
 
         /** @brief Sets the timings for the envelope of the exciter.
          * @param attack Attack time, in seconds

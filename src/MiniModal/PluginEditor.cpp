@@ -83,11 +83,13 @@ namespace modal::plugin {
         foldback_point.setup(plug_params, "foldback_point");
         num_modes.setup(plug_params, "modes");
         decay.setup(plug_params, "decay");
+        fb_amount.setup(plug_params, "fb_amt");
 
         addAndMakeVisible(foldback_mode);
         addAndMakeVisible(foldback_point);
         addAndMakeVisible(num_modes);
         addAndMakeVisible(decay);
+        addAndMakeVisible(fb_amount);
     }
 
     void MiniEditor::Controls::paint(juce::Graphics& g) {
@@ -105,6 +107,7 @@ namespace modal::plugin {
                 FlexItem(foldback_mode).withFlex(1).withHeight(40).withAlignSelf(FlexItem::AlignSelf::center),
                 FlexItem(foldback_point).withFlex(1),
                 FlexItem(decay).withFlex(1),
+                FlexItem(fb_amount).withFlex(1)
         };
 
         fb.performLayout(getLocalBounds().reduced(10));
