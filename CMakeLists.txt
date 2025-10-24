@@ -41,6 +41,7 @@ set(common_sources
         include/dsp/bonus.hpp
         src/dsp/bonus.cpp
         include/dsp/control.hpp
+        include/dsp/delay.hpp
         include/dsp/filters.hpp
         src/dsp/filters.cpp
         include/dsp/formant.hpp
