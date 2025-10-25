@@ -29,6 +29,7 @@ namespace modal::plugin {
             std::make_unique<juce::AudioParameterFloat>("falloff", "Falloff Exponent", 0, 3, 1),
             std::make_unique<juce::AudioParameterFloat>("decay", "Decay", NormalisableRange<float>{0.1f, 5.f}, 1.f),
             std::make_unique<juce::AudioParameterFloat>("fb_amt", "Feedback Amount", NormalisableRange<float>{0.0f, 0.02f}, 0.f),
+            std::make_unique<juce::AudioParameterFloat>("fb_time", "Feedback Time", NormalisableRange<float>{0.0f, 0.2f}, 0.1f),
             std::make_unique<juce::AudioParameterFloat>("macro_control_1", "Macro Control 1", NormalisableRange<float>{0.f, 1.f}, 0.5f, AudioParameterFloatAttributes().withMeta(true)),
             std::make_unique<juce::AudioParameterFloat>("macro_control_2", "Macro Control 2", NormalisableRange<float>{0.f, 1.f}, 0.5f, AudioParameterFloatAttributes().withMeta(true))
     }},  macro_control_1 { *this }, macro_control_2 { *this }, controller{ modal_synths } {
@@ -169,7 +170,7 @@ namespace modal::plugin {
                         *params.getRawParameterValue("even_gain")
                 );
                 m.set_exciter(exciter_mode);
-                m.set_feedback_settings(*params.getRawParameterValue("fb_amt"), 0);
+                m.set_feedback_settings(*params.getRawParameterValue("fb_amt"), *params.getRawParameterValue("fb_time"));
                 changed |= m.set_foldback_settings(foldback_mode,
                                                    params.getRawParameterValue("foldback_point")->load());
 

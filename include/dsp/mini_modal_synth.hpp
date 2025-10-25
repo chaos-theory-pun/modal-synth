@@ -142,7 +142,7 @@ namespace modal::dsp::synth {
 
             to_mode *= env.tick();
 
-            to_mode += fb_out * feedback_amount;
+            to_mode += feedback_line.fetch_sample_s(feedback_time) * feedback_amount;
 
             modal::dsp::num modes_out = 0;
             for (size_t i = 0; i < currentModes; i++) {
