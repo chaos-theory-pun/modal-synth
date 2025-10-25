@@ -70,10 +70,9 @@ namespace modal::dsp::synth {
         modal::dsp::osc::Phasor osc_exciter {48000};
         FoldbackSettings foldback;
 
-        modal::dsp::delay_line feedback_line {0_nm, 1_nm};
         modal::dsp::num feedback_reg = 0;
-        modal::dsp::num feedback_time = 0;
         modal::dsp::num feedback_amount = 0;
+        modal::dsp::num feedback_intensity = 0;
 
         modal::dsp::mod::AHREnv env;
         randutils::default_rng noise;
@@ -124,7 +123,7 @@ namespace modal::dsp::synth {
          */
         modal::dsp::num tick() {
             // modal::dsp::num to_mode =  * env.tick();
-            auto fb_out = feedback_reg;
+            const auto fb_out = feedback_reg;
             modal::dsp::num to_mode = 0;
 
             osc_exciter.tick();
@@ -142,7 +141,9 @@ namespace modal::dsp::synth {
 
             to_mode *= env.tick();
 
-            to_mode += fb_out * feedback_amount;
+            const auto fb_sat = std::tanh(fb_out * feedback_intensity) / std::tanh(feedback_intensity);
+
+            to_mode += fb_sat * feedback_amount;
 
             modal::dsp::num modes_out = 0;
             for (size_t i = 0; i < currentModes; i++) {
@@ -150,12 +151,9 @@ namespace modal::dsp::synth {
             }
 
             modal::dsp::num out = modes_out;
-            
-            // out += fb_out * feedback_amount;
 
             out *= (velocity * velocity);
 
-            feedback_line.push_sample(out);
             feedback_reg = out;
 
             return out;
@@ -205,7 +203,7 @@ namespace modal::dsp::synth {
 
         void set_feedback_settings(const modal::dsp::num amt, const modal::dsp::num time) {
             feedback_amount = amt;
-            feedback_time = time;
+            feedback_intensity = time;
         }
 
         /** @brief Sets the timings for the envelope of the exciter.
@@ -243,7 +241,6 @@ namespace modal::dsp::synth {
             }
             env.set_sample_rate(sr);
             osc_exciter.set_sample_rate(sr);
-            feedback_line.set_sample_rate(sr);
         }
 
         /** @brief Update the internal coefficients of the modal filters
